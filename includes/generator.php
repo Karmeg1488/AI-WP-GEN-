@@ -349,7 +349,11 @@ Ensure the content appears natural and complete.";
     }
 
     $response = aicg_openai_request($api_key, $prompt);
-    return $response ?: 'Content temporarily unavailable.';
+    if (!$response) {
+        error_log('AI WP GEN - Failed to generate article content for: ' . $title);
+        return 'Content temporarily unavailable.';
+    }
+    return $response;
 }
 
 function aicg_generate_contact_and_about_pages() {
@@ -401,6 +405,16 @@ Make it professional, engaging, well-structured with varied paragraph lengths, a
     // Generate content
     $contact_content = aicg_openai_chat_request($api_key, $contact_prompt);
     $about_content = aicg_openai_chat_request($api_key, $about_prompt);
+    
+    if (empty($contact_content)) {
+        error_log('AI WP GEN - Failed to generate Contact page content');
+        $contact_content = '<p>Unable to generate contact page. Please contact administrator.</p>';
+    }
+    if (empty($about_content)) {
+        error_log('AI WP GEN - Failed to generate About page content');
+        $about_content = '<p>Unable to generate about page. Please contact administrator.</p>';
+    }
+    
     $contact_content = aicg_strip_html_wrappers($contact_content);
     $about_content = aicg_strip_html_wrappers($about_content);
 
@@ -778,6 +792,7 @@ function aicg_generate_policy_pages() {
 
     $privacy_content = aicg_openai_chat_request($api_key, $privacy_prompt);
     if (empty($privacy_content)) {
+        error_log('AI WP GEN - Failed to generate Privacy Policy');
         $privacy_content = '<p>Unable to generate privacy policy. Please contact administrator.</p>';
     }
     
@@ -803,6 +818,7 @@ function aicg_generate_policy_pages() {
 
     $terms_content = aicg_openai_chat_request($api_key, $terms_prompt);
     if (empty($terms_content)) {
+        error_log('AI WP GEN - Failed to generate Terms & Conditions');
         $terms_content = '<p>Unable to generate terms and conditions. Please contact administrator.</p>';
     }
     
@@ -829,6 +845,7 @@ function aicg_generate_policy_pages() {
 
     $cookies_content = aicg_openai_chat_request($api_key, $cookies_prompt);
     if (empty($cookies_content)) {
+        error_log('AI WP GEN - Failed to generate Cookie Policy');
         $cookies_content = '<p>Unable to generate cookie policy. Please contact administrator.</p>';
     }
 

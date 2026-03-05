@@ -1,8 +1,8 @@
 # AI WP GEN
 
-**Version:** 1.5.57  
+**Version:** 1.5.58  
 **Author:** Stanislav Perepelytsia  
-**Stable tag:** 1.5.57  
+**Stable tag:** 1.5.58  
 **Tested up to:** 6.8  
 **License:** GPLv2 or later
 
@@ -51,6 +51,22 @@ You can redistribute it and/or modify it under the terms of the GNU General Publ
 ---
 
 ## Changelog
+
+### 1.5.58
+* **CRITICAL: Comprehensive Error Logging** - Added detailed logging for all OpenAI API calls
+  * All API failures now logged to wp-content/debug.log
+  * Image generation errors now tracked and logged
+  * Content generation failures now logged with specific details
+  * HTTP status codes and API error messages captured
+* **ENHANCEMENT: Better Error Handling** - Improved error detection and reporting
+  * Text generation (articles, pages) failures now logged
+  * Image generation failures now logged with context
+  * API timeouts and connection errors now visible in debug logs
+  * Prevents silent failures in content generation
+* **DEBUGGING IMPROVEMENTS**: Easier troubleshooting of OpenAI API issues
+  * Users can now view detailed error messages in wp-content/debug.log
+  * HTTP status codes and full API responses logged for debugging
+  * Helpful error messages for common issues (invalid API key, timeouts, etc.)
 
 ### 1.5.57
 * **BUGFIX: Testimonials Generation** - Fixed syntax error in testimonials prompt with incorrect quote marks

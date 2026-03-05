@@ -2,7 +2,7 @@
 /*
 Plugin Name: AI WP GEN
 Description: Automatic generation of authors, categories, articles, and images via OpenAI.
-Version: 1.5.57
+Version: 1.5.58
 Author: Stanislav Perepelytsia
 License: GPLv2 or later
 */

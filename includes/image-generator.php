@@ -106,16 +106,28 @@ function aicg_generate_image_from_title($api_key, $title) {
     $response = wp_remote_post($endpoint, $args);
 
     if (is_wp_error($response)) {
+        error_log('AI WP GEN - Image Generation Error for "' . $title . '": ' . $response->get_error_message());
         return false;
     }
 
+    $status = wp_remote_retrieve_response_code($response);
     $body = wp_remote_retrieve_body($response);
     $json = json_decode($body, true);
+
+    if ($status !== 200) {
+        error_log('AI WP GEN - Image API Status ' . $status . ' for "' . $title . '": ' . print_r($json, true));
+    }
+
+    if (!empty($json['error'])) {
+        error_log('AI WP GEN - Image API Error for "' . $title . '": ' . print_r($json['error'], true));
+        return false;
+    }
 
     if (!empty($json['data'][0]['url'])) {
         return esc_url_raw($json['data'][0]['url']);
     }
 
+    error_log('AI WP GEN - No image URL in response for "' . $title . '": ' . print_r($json, true));
     return false;
 }
 
