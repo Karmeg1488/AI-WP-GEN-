@@ -19,36 +19,70 @@ function aicg_openai_chat_request($api_key, $prompt) {
             'Content-Type' => 'application/json',
             'Authorization' => 'Bearer ' . $api_key,
         ],
-        'timeout' => 30,
+        'timeout' => 60,  // Increased from 30 to 60 seconds
     ];
 
-    $response = wp_remote_post($endpoint, $args);
+    // Retry logic for failed requests
+    $max_retries = 3;
+    $retry_count = 0;
+    
+    while ($retry_count < $max_retries) {
+        $response = wp_remote_post($endpoint, $args);
 
-    if (is_wp_error($response)) {
-        error_log('AI WP GEN - API Error: ' . $response->get_error_message());
-        return false;
+        if (is_wp_error($response)) {
+            $retry_count++;
+            if ($retry_count >= $max_retries) {
+                error_log('AI WP GEN - API Error (after ' . $max_retries . ' retries): ' . $response->get_error_message());
+                return false;
+            }
+            error_log('AI WP GEN - API Error (retry ' . $retry_count . '): ' . $response->get_error_message());
+            sleep(2); // Wait 2 seconds before retry
+            continue;
+        }
+
+        $status = wp_remote_retrieve_response_code($response);
+        $body = wp_remote_retrieve_body($response);
+        $json = json_decode($body, true);
+
+        // Check for rate limiting (429) or server errors (5xx)
+        if ($status === 429 || ($status >= 500 && $status < 600)) {
+            $retry_count++;
+            if ($retry_count >= $max_retries) {
+                error_log('AI WP GEN - API Status ' . $status . ' (after ' . $max_retries . ' retries): ' . print_r($json, true));
+                return false;
+            }
+            error_log('AI WP GEN - API Status ' . $status . ' (retry ' . $retry_count . '), waiting 3 seconds...');
+            sleep(3); // Wait 3 seconds before retry on rate limit
+            continue;
+        }
+
+        // Non-retryable error
+        if ($status !== 200) {
+            error_log('AI WP GEN - API Status ' . $status . ': ' . print_r($json, true));
+            return false;
+        }
+
+        // Check for API errors in response
+        if (!empty($json['error'])) {
+            error_log('AI WP GEN - API Error Response: ' . print_r($json['error'], true));
+            return false;
+        }
+
+        // Check if we got valid content
+        if (!empty($json['choices'][0]['message']['content'])) {
+            return trim($json['choices'][0]['message']['content']);
+        }
+
+        // Empty content response - try again
+        $retry_count++;
+        if ($retry_count >= $max_retries) {
+            error_log('AI WP GEN - No content in API response (after ' . $max_retries . ' attempts): ' . print_r($json, true));
+            return false;
+        }
+        error_log('AI WP GEN - Empty content response (retry ' . $retry_count . '), waiting 2 seconds...');
+        sleep(2);
     }
 
-    $status = wp_remote_retrieve_response_code($response);
-    $body = wp_remote_retrieve_body($response);
-    $json = json_decode($body, true);
-
-    // Log non-200 status codes
-    if ($status !== 200) {
-        error_log('AI WP GEN - API Status ' . $status . ': ' . print_r($json, true));
-    }
-
-    // Check for API errors in response
-    if (!empty($json['error'])) {
-        error_log('AI WP GEN - API Error Response: ' . print_r($json['error'], true));
-        return false;
-    }
-
-    if (!empty($json['choices'][0]['message']['content'])) {
-        return trim($json['choices'][0]['message']['content']);
-    }
-
-    error_log('AI WP GEN - No content in API response: ' . print_r($json, true));
     return false;
 }
 
@@ -99,30 +133,59 @@ function aicg_generate_image_from_prompt($api_key, $prompt, $width = 512, $heigh
             'Content-Type' => 'application/json',
             'Authorization' => 'Bearer ' . $api_key,
         ],
-        'timeout' => 60,
+        'timeout' => 60,  // Increased from previous
     ];
-    $response = wp_remote_post($endpoint, $args);
-    if (is_wp_error($response)) {
-        error_log('AI WP GEN - Image Generation Error: ' . $response->get_error_message());
+    
+    // Retry logic
+    $max_retries = 2;
+    $retry_count = 0;
+    
+    while ($retry_count < $max_retries) {
+        $response = wp_remote_post($endpoint, $args);
+        
+        if (is_wp_error($response)) {
+            $retry_count++;
+            if ($retry_count >= $max_retries) {
+                error_log('AI WP GEN - Image Generation Error (after ' . $max_retries . ' retries): ' . $response->get_error_message());
+                return false;
+            }
+            error_log('AI WP GEN - Image Generation Error (retry ' . $retry_count . '): ' . $response->get_error_message());
+            sleep(2);
+            continue;
+        }
+        
+        $status = wp_remote_retrieve_response_code($response);
+        $body = json_decode(wp_remote_retrieve_body($response), true);
+        
+        // Handle rate limiting
+        if ($status === 429) {
+            $retry_count++;
+            if ($retry_count >= $max_retries) {
+                error_log('AI WP GEN - Image API Rate Limited (after retries)');
+                return false;
+            }
+            error_log('AI WP GEN - Image API Rate Limited, waiting 5 seconds...');
+            sleep(5);
+            continue;
+        }
+        
+        if ($status !== 200) {
+            error_log('AI WP GEN - Image API Status ' . $status . ': ' . print_r($body, true));
+            return false;
+        }
+        
+        if (!empty($body['error'])) {
+            error_log('AI WP GEN - Image API Error: ' . print_r($body['error'], true));
+            return false;
+        }
+        
+        if (!empty($body['data'][0]['url'])) {
+            return $body['data'][0]['url'];
+        }
+        
+        error_log('AI WP GEN - No image URL in response: ' . print_r($body, true));
         return false;
     }
     
-    $status = wp_remote_retrieve_response_code($response);
-    $body = json_decode(wp_remote_retrieve_body($response), true);
-    
-    if ($status !== 200) {
-        error_log('AI WP GEN - Image API Status ' . $status . ': ' . print_r($body, true));
-    }
-    
-    if (!empty($body['error'])) {
-        error_log('AI WP GEN - Image API Error: ' . print_r($body['error'], true));
-        return false;
-    }
-    
-    if (!empty($body['data'][0]['url'])) {
-        return $body['data'][0]['url'];
-    }
-    
-    error_log('AI WP GEN - No image URL in response: ' . print_r($body, true));
     return false;
 }

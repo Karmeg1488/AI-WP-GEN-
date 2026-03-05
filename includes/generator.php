@@ -199,7 +199,25 @@ function aicg_generate_authors_categories_articles() {
             wp_reset_postdata();
 
             // Generate article content with language consideration
-            $content = aicg_openai_generate_content($api_key, $title, $language);
+            // Retry up to 3 times if content generation fails
+            $content = null;
+            for ($attempt = 1; $attempt <= 3; $attempt++) {
+                $content = aicg_openai_generate_content($api_key, $title, $language);
+                if ($content) {
+                    error_log('AI WP GEN - Article content generated on attempt ' . $attempt);
+                    break;
+                }
+                error_log('AI WP GEN - Article content generation failed on attempt ' . $attempt . ', retrying...');
+                if ($attempt < 3) {
+                    sleep(2); // Wait 2 seconds before retry
+                }
+            }
+
+            // Skip article if content generation failed
+            if (!$content) {
+                error_log('AI WP GEN - Skipping article "' . $title . '" - failed to generate content after 3 attempts');
+                continue;
+            }
 
             // Pick a random author from the list
             $author = $authors[array_rand($authors)];
@@ -351,7 +369,7 @@ Ensure the content appears natural and complete.";
     $response = aicg_openai_request($api_key, $prompt);
     if (!$response) {
         error_log('AI WP GEN - Failed to generate article content for: ' . $title);
-        return 'Content temporarily unavailable.';
+        return false;
     }
     return $response;
 }
