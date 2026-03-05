@@ -1,8 +1,8 @@
 <?php
 /*
 Plugin Name: AI WP GEN
-Description: Automatic generation of authors, categories, articles, and images via OpenAI.
-Version: 1.5.58
+Description: Automatic generation of authors, categories, articles, images, and WordPress themes via OpenAI.
+Version: 1.6.0
 Author: Stanislav Perepelytsia
 License: GPLv2 or later
 */
@@ -14,6 +14,7 @@ require_once plugin_dir_path(__FILE__) . 'includes/generator.php';
 require_once plugin_dir_path(__FILE__) . 'includes/image-generator.php';
 require_once plugin_dir_path(__FILE__) . 'includes/openai-helper.php';
 require_once plugin_dir_path(__FILE__) . 'includes/ajax-handlers.php';
+require_once plugin_dir_path(__FILE__) . 'includes/theme-generator.php';
 
 // Hook to add admin menu
 add_action('admin_menu', function() {

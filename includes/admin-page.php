@@ -213,6 +213,39 @@ function aicg_admin_page_render() {
                     <div id="aicg-generate-homepage-result"></div>
                 </div>
             </div>
+
+            <!-- Theme Generation Section -->
+            <div style="margin-bottom: 32px;">
+                <h2>🎭 Theme Generation (v1.6)</h2>
+                <p style="color: #666; margin-bottom: 20px;">Create a complete custom WordPress theme with unique styles, layouts, and images based on your description.</p>
+                
+                <div class="aicg-section">
+                    <h3>Create Custom Theme</h3>
+                    <p>Generate a full WordPress theme with custom CSS, layouts, and images. After generation, activate it from Appearance → Themes.</p>
+                    
+                    <form id="aicg-theme-form" style="margin-top: 15px;">
+                        <div style="margin-bottom: 15px;">
+                            <label for="aicg-theme-name" style="display: block; margin-bottom: 5px; font-weight: 500;">Theme Name</label>
+                            <input type="text" id="aicg-theme-name" name="theme_name" placeholder="e.g., Modern Business" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        </div>
+                        
+                        <div style="margin-bottom: 15px;">
+                            <label for="aicg-theme-description" style="display: block; margin-bottom: 5px; font-weight: 500;">Theme Description</label>
+                            <input type="text" id="aicg-theme-description" name="theme_description" placeholder="e.g., Professional business theme with modern design" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        </div>
+                        
+                        <div style="margin-bottom: 15px;">
+                            <label for="aicg-theme-prompt" style="display: block; margin-bottom: 5px; font-weight: 500;">Design Prompt (Optional)</label>
+                            <textarea id="aicg-theme-prompt" name="custom_prompt" placeholder="Describe the design style, colors, and layout. E.g., 'Minimalist design with dark colors and sans-serif fonts'" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; height: 80px;"></textarea>
+                            <p class="description">Leave empty for auto-generated design or describe your desired theme style.</p>
+                        </div>
+                        
+                        <button type="button" id="aicg-generate-theme" class="button button-primary" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; color: white; padding: 10px 20px; cursor: pointer;">🚀 Generate Theme</button>
+                    </form>
+                    
+                    <div id="aicg-generate-theme-result" style="margin-top: 15px;"></div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -893,6 +926,42 @@ function aicg_admin_page_render() {
             }).fail(function() {
                 $btn.prop('disabled', false).text('Generate Policy Pages');
                 showResult('aicg-generate-policies-result', '✗ Error: Request failed', false);
+            });
+        });
+
+        // Generate Theme
+        $('#aicg-generate-theme').on('click', function(){
+            const $btn = $(this);
+            const themeName = $('#aicg-theme-name').val();
+            const themeDescription = $('#aicg-theme-description').val();
+            const customPrompt = $('#aicg-theme-prompt').val();
+            
+            if (!themeName) {
+                showResult('aicg-generate-theme-result', '✗ Please enter a theme name', false);
+                return;
+            }
+            
+            $btn.prop('disabled', true).text('Generating Theme (This may take a few minutes)...');
+            showLoading('aicg-generate-theme-result');
+            
+            $.post(ajaxurl, {
+                action: 'aicg_generate_theme',
+                _wpnonce: '<?php echo esc_attr( wp_create_nonce("aicg_generate_theme") ); ?>',
+                theme_name: themeName,
+                theme_description: themeDescription,
+                custom_prompt: customPrompt
+            }, function(response){
+                $btn.prop('disabled', false).text('🚀 Generate Theme');
+                if(response.success) {
+                    const message = '<strong>' + response.data.message + '</strong><br><a href="/wp-admin/themes.php" style="margin-top: 10px; display: inline-block;" class="button button-primary">Go to Themes</a>';
+                    showResult('aicg-generate-theme-result', '✓ ' + message, true);
+                    $('#aicg-theme-form')[0].reset();
+                } else {
+                    showResult('aicg-generate-theme-result', '✗ ' + response.data, false);
+                }
+            }).fail(function() {
+                $btn.prop('disabled', false).text('🚀 Generate Theme');
+                showResult('aicg-generate-theme-result', '✗ Error: Request failed', false);
             });
         });
 

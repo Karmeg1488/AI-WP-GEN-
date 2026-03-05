@@ -1,8 +1,8 @@
 # AI WP GEN
 
-**Version:** 1.5.58  
+**Version:** 1.6.0  
 **Author:** Stanislav Perepelytsia  
-**Stable tag:** 1.5.58  
+**Stable tag:** 1.6.0  
 **Tested up to:** 6.8  
 **License:** GPLv2 or later
 
@@ -29,6 +29,13 @@ All content is generated in the language you select in the plugin settings.
 - Generate comprehensive "Contact" and "About Us" pages with rich content
 - Generate complete homepages with Hero section, About us, blog posts, and testimonials
 - Generate custom base.css stylesheet based on styling preferences
+- **🎭 NEW v1.6: Generate complete custom WordPress themes** - Full theme creation with unique styles
+  - Complete WordPress theme structure (header, footer, single, page, archive templates)
+  - Custom CSS generation (1400+ lines) per theme
+  - Automatic theme screenshot and preview images
+  - Responsive design included
+  - Mobile-friendly templates
+  - All themes include functions.php with WordPress hooks and widgets
 - All content adapts to your selected language
 - **Supported languages:** English, Polish, German, Hungarian, Ukrainian, Turkish, Italian, Czech, French, Dutch
 
@@ -51,6 +58,37 @@ You can redistribute it and/or modify it under the terms of the GNU General Publ
 ---
 
 ## Changelog
+
+### 1.6.0 - MAJOR: Theme Generation
+* **🎭 NEW FEATURE: Complete WordPress Theme Generation** - Create full custom WordPress themes with unique styles
+  * Generate complete WordPress theme structure with all necessary files
+  * Custom CSS generation (1400+ lines per theme) based on OpenAI
+  * Automatic generation of theme files: header.php, footer.php, index.php, single.php, page.php, archive.php, sidebar.php
+  * Responsive design templates included in all generated themes
+  * Unique functions.php with WordPress hooks, widgets, and theme support
+* **ENHANCEMENT: Theme Screenshot & Images** - Automatically generate preview images
+  * Professional theme screenshot for WordPress theme browser
+  * Generate multiple high-quality images for theme sections (hero, feature, content)
+  * All images optimized for web (1920x1080px)
+* **ENHANCEMENT: Custom CSS Assets** - Additional styling capabilities
+  * Custom CSS files with advanced animations and effects (800+ lines)
+  * Gradient generators and modern color schemes
+  * Mobile-responsive styles included
+  * CSS variables/custom properties for easy customization
+* **UI IMPROVEMENT: New Theme Generation Panel** - User-friendly theme creation
+  * Theme name input
+  * Optional theme description
+  * Custom design prompt (optional) for personalized themes
+  * Real-time generation with progress indicators
+  * Direct link to activate theme after generation
+* **TECHNICAL**: Full theme generation pipeline
+  * Automatic directory creation and management
+  * File write validation
+  * Image download and optimization
+  * Error logging for all generation steps
+* **SUPPORTED LANGUAGES**: All 10 languages supported for theme-specific content
+  * Themes adapt to selected language
+  * Localized hero sections and content descriptions
 
 ### 1.5.58
 * **CRITICAL: Comprehensive Error Logging** - Added detailed logging for all OpenAI API calls
