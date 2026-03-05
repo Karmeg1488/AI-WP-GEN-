@@ -202,6 +202,10 @@ function aicg_generate_theme_css($api_key, $theme_name, $language, $custom_promp
  * Generate theme functions.php
  */
 function aicg_generate_theme_functions($theme_name, $theme_slug) {
+    // Convert slug with dashes to underscore version for PHP function names
+    $php_slug = str_replace('-', '_', $theme_slug);
+    $theme_slug_quoted = "'{$theme_slug}'";
+    
     return <<<PHP
 <?php
 /**
@@ -217,15 +221,15 @@ add_theme_support('responsive-embeds');
 
 // Register menus
 register_nav_menus(array(
-    'primary' => __('Primary Menu', '{$theme_slug}'),
-    'footer' => __('Footer Menu', '{$theme_slug}')
+    'primary' => __('Primary Menu', '{$php_slug}'),
+    'footer' => __('Footer Menu', '{$php_slug}')
 ));
 
 // Register sidebars
 register_sidebar(array(
-    'name' => __('Primary Sidebar', '{$theme_slug}'),
-    'id' => '{$theme_slug}-primary',
-    'description' => __('Main sidebar', '{$theme_slug}'),
+    'name' => __('Primary Sidebar', '{$php_slug}'),
+    'id' => '{$php_slug}_primary',
+    'description' => __('Main sidebar', '{$php_slug}'),
     'before_widget' => '<div id="%1\\$s" class="widget %2\\$s">',
     'after_widget' => '</div>',
     'before_title' => '<h3 class="widget-title">',
@@ -233,26 +237,26 @@ register_sidebar(array(
 ));
 
 // Enqueue styles and scripts
-function {$theme_slug}_enqueue_assets() {
+function {$php_slug}_enqueue_assets() {
     wp_enqueue_style('{$theme_slug}-style', get_stylesheet_uri(), array(), '1.0.0');
     wp_enqueue_script('{$theme_slug}-script', get_template_directory_uri() . '/assets/js/theme.js', array('jquery'), '1.0.0', true);
 }
-add_action('wp_enqueue_scripts', '{$theme_slug}_enqueue_assets');
+add_action('wp_enqueue_scripts', '{$php_slug}_enqueue_assets');
 
 // Custom excerpt length
-function {$theme_slug}_excerpt_length(\$length) {
+function {$php_slug}_excerpt_length(\$length) {
     return 20;
 }
-add_filter('excerpt_length', '{$theme_slug}_excerpt_length');
+add_filter('excerpt_length', '{$php_slug}_excerpt_length');
 
 // Custom excerpt more
-function {$theme_slug}_excerpt_more(\$more) {
+function {$php_slug}_excerpt_more(\$more) {
     return '...';
 }
-add_filter('excerpt_more', '{$theme_slug}_excerpt_more');
+add_filter('excerpt_more', '{$php_slug}_excerpt_more');
 
 // Add custom body classes
-function {$theme_slug}_body_classes(\$classes) {
+function {$php_slug}_body_classes(\$classes) {
     if (is_front_page()) {
         \$classes[] = 'front-page';
     }
@@ -261,7 +265,7 @@ function {$theme_slug}_body_classes(\$classes) {
     }
     return \$classes;
 }
-add_filter('body_class', '{$theme_slug}_body_classes');
+add_filter('body_class', '{$php_slug}_body_classes');
 ?>
 PHP;
 }
