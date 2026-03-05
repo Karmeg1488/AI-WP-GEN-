@@ -492,7 +492,7 @@ function aicg_generate_homepage() {
 
     // 3. Generate 3 customer testimonials
     $testimonials_prompt = "Generate 3 detailed, authentic customer testimonials for a service/product/business called \"$site_name\". " .
-        ($custom_prompt ? "Business context: $custom_prompt. \" : \") .
+        ($custom_prompt ? "Business context: $custom_prompt. " : "") .
         "Each testimonial should have: (1) A customer name (realistic, credible first and last name); (2) A detailed, specific comment (3-4 sentences) praising concrete benefits, improvements, or remarkable results; (3) A rating word (excellent, amazing, outstanding, transformative, life-changing, etc). " .
         "Make testimonials diverse, natural-sounding, with specific details about benefits. Include metrics or specific outcomes where appropriate. " .
         "Language: $language. " .

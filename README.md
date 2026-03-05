@@ -1,8 +1,8 @@
 # AI WP GEN
 
-**Version:** 1.5.56  
+**Version:** 1.5.57  
 **Author:** Stanislav Perepelytsia  
-**Stable tag:** 1.5.56  
+**Stable tag:** 1.5.57  
 **Tested up to:** 6.8  
 **License:** GPLv2 or later
 
@@ -51,6 +51,11 @@ You can redistribute it and/or modify it under the terms of the GNU General Publ
 ---
 
 ## Changelog
+
+### 1.5.57
+* **BUGFIX: Testimonials Generation** - Fixed syntax error in testimonials prompt with incorrect quote marks
+* **CRITICAL: Plugin Activation** - Fixed fatal error preventing plugin activation
+* All testimonials generation functionality now works correctly
 
 ### 1.5.56
 * **MAJOR: Enhanced Content Generation** - Significantly increased content volume for all generated pages and articles
