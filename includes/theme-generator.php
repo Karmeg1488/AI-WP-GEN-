@@ -9,22 +9,17 @@ function aicg_fix_template_syntax($content) {
         return $content;
     }
 
-    // Fix: <?php followed directly by HTML without closing ?>
-    // Match pattern: <?php [spaces/newlines] < (start of HTML tag)
-    $content = preg_replace('/<\?php\s*(?=<[^?])/m', "<?php\n?>\n<", $content);
+    // Don't modify by default - let the improved prompts do their job
+    // Only do minimal fixes for extreme cases
     
-    // Fix: Multiple <?php tags - remove duplicates
-    $content = preg_replace('/<\?php\s*<\?php/m', "<?php", $content);
+    $content = trim($content);
     
-    // Fix: Remove empty PHP blocks
-    $content = preg_replace('/<\?php\s*\?>/m', '', $content);
+    // Remove markdown code fence if present
+    $content = preg_replace('/^```php\s*/i', '', $content);
+    $content = preg_replace('/\s*```\s*$/i', '', $content);
+    $content = trim($content);
     
-    // Ensure file starts with <?php on fresh line if it has PHP
-    if (strpos($content, '<?php') === 0) {
-        $content = "<?php\n" . ltrim(substr($content, 5));
-    }
-    
-    return trim($content);
+    return $content;
 }
 
 /**
@@ -112,10 +107,18 @@ function aicg_generate_wordpress_theme($api_key, $theme_name, $theme_description
         'page.php' => aicg_fix_template_syntax($page_php),
         'archive.php' => aicg_fix_template_syntax($archive_php),
         'sidebar.php' => aicg_fix_template_syntax($sidebar_php),
+        'assets/js/theme.js' => "/* Theme JavaScript */\n(function() {\n    'use strict';\n    \n    // Mobile menu toggle\n    const menuToggle = document.querySelector('.mobile-menu-toggle');\n    if (menuToggle) {\n        menuToggle.addEventListener('click', function() {\n            this.classList.toggle('active');\n        });\n    }\n})();\n",
     ];
 
     foreach ($files as $filename => $content) {
         $file_path = $theme_path . '/' . $filename;
+        
+        // Create subdirectories if needed
+        $dir = dirname($file_path);
+        if (!is_dir($dir)) {
+            wp_mkdir_p($dir);
+        }
+        
         if (file_put_contents($file_path, $content) === false) {
             return new WP_Error('write_error', "Failed to write theme file: $filename");
         }
@@ -297,129 +300,299 @@ PHP;
 }
 
 /**
- * Generate header.php
+ * Generate header.php - Use hardcoded template for reliability
  */
 function aicg_generate_theme_header($api_key, $theme_name, $language, $custom_prompt = '') {
-    $prompt = "Generate a complete, valid header.php WordPress template for theme \"{$theme_name}\" in {$language}. " .
-        "CRITICAL REQUIREMENTS:\n" .
-        "1) Start with <?php tag, then immediately include logical code\n" .
-        "2) IMPORTANT: Close the opening <?php tag with ?> BEFORE any HTML doctype\n" .
-        "3) The file structure MUST be: <?php [php code here] ?> [HTML here] \n" .
-        "4) Include these functions: wp_head(), bloginfo('charset'), body_class(), wp_nav_menu(), get_template_directory_uri()\n" .
-        "5) Include: DOCTYPE html, head with meta tags (charset, viewport), navigation, logo/branding, search form, social icons\n" .
-        "6) Responsive mobile menu toggle button\n" .
-        "7) Use semantic HTML5 elements\n" .
-        "8) Do NOT use markdown, output must be raw PHP/HTML code only\n" .
-        "EXAMPLE STRUCTURE:\n" .
-        "<?php\n" .
-        "// PHP logic here\n" .
-        "?>\n" .
-        "<!DOCTYPE html>\n" .
-        "<html>\n" .
-        "...[rest of HTML]";
-
-    $response = aicg_openai_chat_request($api_key, $prompt);
-    if (empty($response)) {
-        error_log('AI WP GEN - Failed to generate theme header');
-        return '';
-    }
-
-    return $response;
+    return <<<'PHP'
+<?php
+/**
+ * Header Template
+ */
+?>
+<!DOCTYPE html>
+<html lang="<?php language_attributes(); ?>">
+<head>
+    <meta charset="<?php bloginfo('charset'); ?>">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?php wp_title(); ?></title>
+    <?php wp_head(); ?>
+</head>
+<body <?php body_class(); ?>>
+    <header class="site-header">
+        <div class="site-branding">
+            <h1><a href="<?php echo home_url(); ?>"><?php bloginfo('name'); ?></a></h1>
+            <p><?php bloginfo('description'); ?></p>
+        </div>
+        <nav class="main-navigation">
+            <?php wp_nav_menu(array('theme_location' => 'primary', 'container' => false, 'fallback_cb' => 'wp_page_menu')); ?>
+        </nav>
+    </header>
+    <main class="site-content">
+PHP;
 }
 
 /**
- * Generate footer.php
+ * Generate footer.php - Use hardcoded template for reliability
  */
 function aicg_generate_theme_footer($api_key, $theme_name, $language) {
-    $prompt = "Generate a complete WordPress footer.php template for theme \"{$theme_name}\" in {$language}. " .
-        "CRITICAL REQUIREMENTS:\n" .
-        "1) Start with <?php tag\n" .
-        "2) IMPORTANT: Close PHP with ?> BEFORE HTML content\n" .
-        "3) Include wp_footer() function (REQUIRED for WordPress)\n" .
-        "4) Include: multi-column layout (3-4 columns), widgets area, copyright notice, footer menu with wp_nav_menu()\n" .
-        "5) Include: social media links, back to top button, closing body and html tags\n" .
-        "6) Responsive design with flexbox\n" .
-        "7) Clean semantic HTML5\n" .
-        "8) Do NOT use markdown, only raw PHP/HTML\n" .
-        "MUST include <?php wp_footer(); ?> before closing body tag.";
-
-    $response = aicg_openai_chat_request($api_key, $prompt);
-    if (empty($response)) {
-        error_log('AI WP GEN - Failed to generate theme footer');
-        return '';
-    }
-
-    return $response;
+    return <<<'PHP'
+<?php
+/**
+ * Footer Template
+ */
+?>
+    </main>
+    <footer class="site-footer">
+        <div class="footer-content">
+            <div class="footer-widgets">
+                <?php 
+                if (is_active_sidebar('primary-sidebar')) {
+                    dynamic_sidebar('primary-sidebar');
+                }
+                ?>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; <?php echo date('Y'); ?> <?php bloginfo('name'); ?>. All rights reserved.</p>
+                <?php wp_footer(); ?>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
+PHP;
 }
 
 /**
  * Generate index.php (main template)
  */
+/**
+ * Generate index.php - Use hardcoded template for reliability
+ */
 function aicg_generate_theme_index($api_key, $theme_name, $language) {
-    $prompt = "Generate WordPress index.php template for theme \"{$theme_name}\" showing blog posts/articles in {$language}. " .
-        "CRITICAL: Start with <?php, then close with ?> before HTML.\n" .
-        "Include: get_header(), have_posts() loop with posts, post title/excerpt/date/author/categories, thumbnails, read more link, pagination, sidebar with dynamic_sidebar(), get_footer().\n" .
-        "Responsive, semantic HTML5. Output ONLY raw PHP/HTML code - no markdown.";
-
-    $response = aicg_openai_chat_request($api_key, $prompt);
-    if (empty($response)) {
-        error_log('AI WP GEN - Failed to generate theme index');
-        return '';
-    }
-
-    return $response;
+    return <<<'PHP'
+<?php
+/**
+ * Main Template
+ */
+get_header();
+?>
+<div class="posts-container">
+    <?php
+    if (have_posts()) :
+        while (have_posts()) : the_post();
+            ?>
+            <article class="post">
+                <?php if (has_post_thumbnail()) : ?>
+                    <div class="post-thumbnail">
+                        <?php the_post_thumbnail('medium'); ?>
+                    </div>
+                <?php endif; ?>
+                <h2><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h2>
+                <div class="post-meta">
+                    <span class="author">By <?php the_author(); ?></span>
+                    <span class="date"><?php echo get_the_date(); ?></span>
+                    <span class="category"><?php the_category(', '); ?></span>
+                </div>
+                <div class="excerpt">
+                    <?php the_excerpt(); ?>
+                </div>
+                <a href="<?php the_permalink(); ?>" class="read-more">Read More</a>
+            </article>
+            <?php
+        endwhile;
+        
+        // Pagination
+        ?>
+        <nav class="pagination">
+            <?php
+            echo paginate_links(array(
+                'type' => 'list',
+                'prev_text' => '&laquo; Previous',
+                'next_text' => 'Next &raquo;'
+            ));
+            ?>
+        </nav>
+        <?php
+    else :
+        ?>
+        <p>No posts found.</p>
+        <?php
+    endif;
+    ?>
+</div>
+<?php get_footer(); ?>
+PHP;
 }
 
 /**
  * Generate single.php (single post template)
  */
+/**
+ * Generate single.php - Use hardcoded template for reliability
+ */
 function aicg_generate_theme_single($api_key, $theme_name, $language) {
-    $prompt = "Generate WordPress single.php for displaying single posts in theme \"{$theme_name}\" in {$language}. " .
-        "CRITICAL: Start with <?php, close with ?> before HTML.\n" .
-        "Include: get_header(), featured image, post title, author info with get_the_author_meta(), publication date, categories, full post_content, tags, related posts query, comments_template(), get_footer().\n" .
-        "Responsive, semantic HTML5. Output ONLY raw PHP/HTML - no markdown.";
-
-    $response = aicg_openai_chat_request($api_key, $prompt);
-    return !empty($response) ? $response : '';
+    return <<<'PHP'
+<?php
+/**
+ * Single Post Template
+ */
+get_header();
+?>
+<div class="post-container">
+    <?php
+    while (have_posts()) : the_post();
+        ?>
+        <article class="single-post">
+            <?php if (has_post_thumbnail()) : ?>
+                <div class="post-featured-image">
+                    <?php the_post_thumbnail('large'); ?>
+                </div>
+            <?php endif; ?>
+            <h1><?php the_title(); ?></h1>
+            <div class="post-meta">
+                <span class="author">By <?php the_author_meta('display_name'); ?></span>
+                <span class="date"><?php echo get_the_date(); ?></span>
+                <span class="category"><?php the_category(', '); ?></span>
+            </div>
+            <div class="post-content">
+                <?php the_content(); ?>
+            </div>
+            <div class="post-tags">
+                <?php the_tags('<span>', '</span>', ''); ?>
+            </div>
+            <nav class="post-navigation">
+                <div class="prev-post"><?php previous_post_link(); ?></div>
+                <div class="next-post"><?php next_post_link(); ?></div>
+            </nav>
+        </article>
+        <?php
+        if (comments_open() || get_comments_number()) {
+            comments_template();
+        }
+    endwhile;
+    ?>
+</div>
+<?php get_footer(); ?>
+PHP;
 }
 
 /**
  * Generate page.php (page template)
  */
+/**
+ * Generate page.php - Use hardcoded template for reliability
+ */
 function aicg_generate_theme_page($api_key, $theme_name, $language) {
-    $prompt = "Generate WordPress page.php for static pages in theme \"{$theme_name}\" in {$language}. " .
-        "CRITICAL: Start with <?php, close with ?> before HTML.\n" .
-        "Include: get_header(), page title using the_title(), full page content with the_content(), comments_template(), sidebar with dynamic_sidebar(), get_footer().\n" .
-        "Responsive, semantic HTML5. Output ONLY raw PHP/HTML - no markdown.";
-
-    $response = aicg_openai_chat_request($api_key, $prompt);
-    return !empty($response) ? $response : '';
+    return <<<'PHP'
+<?php
+/**
+ * Page Template
+ */
+get_header();
+?>
+<div class="page-container">
+    <?php
+    while (have_posts()) : the_post();
+        ?>
+        <article class="page">
+            <h1><?php the_title(); ?></h1>
+            <div class="page-content">
+                <?php the_content(); ?>
+            </div>
+        </article>
+        <?php
+        if (comments_open() || get_comments_number()) {
+            comments_template();
+        }
+    endwhile;
+    ?>
+</div>
+<?php get_footer(); ?>
+PHP;
 }
 
 /**
  * Generate archive.php (archive template)
  */
+/**
+ * Generate archive.php - Use hardcoded template for reliability
+ */
 function aicg_generate_theme_archive($api_key, $theme_name, $language) {
-    $prompt = "Generate WordPress archive.php for category/date archives in theme \"{$theme_name}\" in {$language}. " .
-        "CRITICAL: Start with <?php, close with ?> before HTML.\n" .
-        "Include: get_header(), archive title using the_archive_title(), archive description with the_archive_description(), posts loop with have_posts(), post summaries, pagination, get_footer().\n" .
-        "Responsive, semantic HTML5. Output ONLY raw PHP/HTML - no markdown.";
-
-    $response = aicg_openai_chat_request($api_key, $prompt);
-    return !empty($response) ? $response : '';
+    return <<<'PHP'
+<?php
+/**
+ * Archive Template
+ */
+get_header();
+?>
+<div class="archive-container">
+    <h1 class="archive-title"><?php the_archive_title(); ?></h1>
+    <div class="archive-description"><?php the_archive_description(); ?></div>
+    
+    <div class="posts-archive">
+        <?php
+        if (have_posts()) :
+            while (have_posts()) : the_post();
+                ?>
+                <article class="post">
+                    <?php if (has_post_thumbnail()) : ?>
+                        <div class="post-thumbnail">
+                            <?php the_post_thumbnail('medium'); ?>
+                        </div>
+                    <?php endif; ?>
+                    <h2><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h2>
+                    <div class="post-meta">
+                        <span class="date"><?php echo get_the_date(); ?></span>
+                    </div>
+                    <div class="excerpt">
+                        <?php the_excerpt(); ?>
+                    </div>
+                </article>
+                <?php
+            endwhile;
+            
+            // Pagination
+            echo paginate_links(array('type' => 'list'));
+        else :
+            ?>
+            <p>No posts found.</p>
+            <?php
+        endif;
+        ?>
+    </div>
+</div>
+<?php get_footer(); ?>
+PHP;
 }
 
 /**
  * Generate sidebar.php
  */
+/**
+ * Generate sidebar.php - Use hardcoded template for reliability
+ */
 function aicg_generate_theme_sidebar($api_key, $theme_name, $language) {
-    $prompt = "Generate WordPress sidebar.php for theme \"{$theme_name}\" in {$language}. " .
-        "CRITICAL: Start with <?php, close with ?> before HTML.\n" .
-        "Include: PHP check if(is_active_sidebar()), dynamic_sidebar() function call, styled widget containers with proper HTML.\n" .
-        "Responsive CSS-friendly markup. Output ONLY raw PHP/HTML - no markdown.";
-
-    $response = aicg_openai_chat_request($api_key, $prompt);
-    return !empty($response) ? $response : '';
+    return <<<'PHP'
+<?php
+/**
+ * Sidebar Template
+ */
+?>
+<aside class="sidebar">
+    <?php
+    if (is_active_sidebar('primary-sidebar')) {
+        dynamic_sidebar('primary-sidebar');
+    } else {
+        ?>
+        <div class="widget">
+            <h3>Primary Sidebar</h3>
+            <p>This sidebar is not assigned any widgets. Configure it in Appearance > Widgets.</p>
+        </div>
+        <?php
+    }
+    ?>
+</aside>
+PHP;
 }
 
 /**
