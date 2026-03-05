@@ -23,24 +23,6 @@ function aicg_generate_title_tagline() {
 
     // Get language from plugin settings
     $language_code = get_option('ang_language', 'en');
-    if (!function_exists('get_language_name_from_code')) {
-        function get_language_name_from_code($code) {
-            $map = [
-                'en' => 'English',
-                'pl' => 'Polish',
-                'de' => 'German',
-                'hu' => 'Hungarian',
-                'uk' => 'Ukrainian',
-                'tr' => 'Turkish',
-                'it' => 'Italian',
-                'cs' => 'Czech',
-                'fr' => 'French',
-                'nl' => 'Dutch',
-            ];
-            $code = strtolower($code);
-            return $map[$code] ?? 'English';
-        }
-    }
     $language = get_language_name_from_code($language_code);
 
     $prompt = "Come up with a creative website title and a short tagline for a website with the domain \"$domain\". The answer must be in $language. Respond in the format: Title - Tagline";

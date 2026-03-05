@@ -32,7 +32,10 @@ add_action('admin_menu', function() {
 add_action('wp_enqueue_scripts', function() {
     $css_url = get_option('aicg_css_file_url', '');
     if (!empty($css_url)) {
-        wp_enqueue_style('aicg-base-css', $css_url, [], filemtime(wp_upload_dir()['basedir'] . '/aicg-styles/base.css'));
+        $upload_dir = wp_upload_dir();
+        $css_file = $upload_dir['basedir'] . '/aicg-styles/base.css';
+        $version = file_exists($css_file) ? filemtime($css_file) : '1.0';
+        wp_enqueue_style('aicg-base-css', $css_url, [], $version);
     }
 });
 
