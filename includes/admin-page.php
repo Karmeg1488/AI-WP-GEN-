@@ -21,8 +21,9 @@ function aicg_admin_page_render() {
             update_option('blogname', $site_name);
         }
         
-        update_option('ang_site_topic', sanitize_text_field( wp_unslash($_POST['ang_site_topic'] ?? '') ));
-        update_option('ang_style_prompt', sanitize_text_field( wp_unslash($_POST['ang_style_prompt'] ?? '') ));
+        update_option('ang_site_topic', sanitize_textarea_field( wp_unslash($_POST['ang_site_topic'] ?? '') ));
+        update_option('ang_style_prompt', sanitize_textarea_field( wp_unslash($_POST['ang_style_prompt'] ?? '') ));
+        update_option('aicg_theme_prompt', sanitize_textarea_field( wp_unslash($_POST['aicg_theme_prompt'] ?? '') ));
         update_option('ang_language', sanitize_text_field( wp_unslash($_POST['ang_language'] ?? 'en') ));
 
         echo '<div class="notice notice-success is-dismissible"><p>Settings saved.</p></div>';
@@ -110,6 +111,13 @@ function aicg_admin_page_render() {
     <td>
         <textarea name="ang_style_prompt" id="ang_style_prompt" class="large-text code" rows="6" style="width: 100%; max-width: 600px; font-family: 'Courier New', monospace;"><?php echo esc_textarea(get_option('ang_style_prompt','')); ?></textarea>
         <p class="description" style="margin-top: 8px;">Optional: Describe your website styling preferences - colors, tones, fonts, layout style, modern/classic, dark/light theme, etc. This will be used to generate a custom base.css file. Example: "Modern dark theme with purple and blue gradients, sans-serif fonts, minimalist design"</p>
+    </td>
+</tr>
+<tr>
+    <th scope="row"><label for="aicg_theme_prompt">Theme Design Prompt (v1.6)</label></th>
+    <td>
+        <textarea name="aicg_theme_prompt" id="aicg_theme_prompt" class="large-text code" rows="6" style="width: 100%; max-width: 600px; font-family: 'Courier New', monospace;"><?php echo esc_textarea(get_option('aicg_theme_prompt','')); ?></textarea>
+        <p class="description" style="margin-top: 8px;">Optional: Describe your desired WordPress theme design. This will be used to generate custom themes with unique styles. Example: "Professional business theme with minimalist design, dark blue and white colors, modern typography, clean layouts"</p>
     </td>
 </tr>
 <tr>
@@ -234,10 +242,9 @@ function aicg_admin_page_render() {
                             <input type="text" id="aicg-theme-description" name="theme_description" placeholder="e.g., Professional business theme with modern design" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
                         </div>
                         
-                        <div style="margin-bottom: 15px;">
-                            <label for="aicg-theme-prompt" style="display: block; margin-bottom: 5px; font-weight: 500;">Design Prompt (Optional)</label>
-                            <textarea id="aicg-theme-prompt" name="custom_prompt" placeholder="Describe the design style, colors, and layout. E.g., 'Minimalist design with dark colors and sans-serif fonts'" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; height: 80px;"></textarea>
-                            <p class="description">Leave empty for auto-generated design or describe your desired theme style.</p>
+                        <div style="margin-bottom: 15px; padding: 12px; background: #e7f3ff; border-left: 4px solid #667eea; border-radius: 4px;">
+                            <p style="margin: 0; color: #666;"><strong>Theme Design Prompt:</strong> Uses <strong>'Theme Design Prompt'</strong> from Settings</p>
+                            <p style="margin: 5px 0 0 0; font-size: 13px; color: #999;">Edit the 'Theme Design Prompt' field in Settings tab to customize theme appearance.</p>
                         </div>
                         
                         <button type="button" id="aicg-generate-theme" class="button button-primary" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; color: white; padding: 10px 20px; cursor: pointer;">🚀 Generate Theme</button>
@@ -934,7 +941,6 @@ function aicg_admin_page_render() {
             const $btn = $(this);
             const themeName = $('#aicg-theme-name').val();
             const themeDescription = $('#aicg-theme-description').val();
-            const customPrompt = $('#aicg-theme-prompt').val();
             
             if (!themeName) {
                 showResult('aicg-generate-theme-result', '✗ Please enter a theme name', false);
@@ -948,8 +954,7 @@ function aicg_admin_page_render() {
                 action: 'aicg_generate_theme',
                 _wpnonce: '<?php echo esc_attr( wp_create_nonce("aicg_generate_theme") ); ?>',
                 theme_name: themeName,
-                theme_description: themeDescription,
-                custom_prompt: customPrompt
+                theme_description: themeDescription
             }, function(response){
                 $btn.prop('disabled', false).text('🚀 Generate Theme');
                 if(response.success) {
