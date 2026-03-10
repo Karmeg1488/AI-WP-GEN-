@@ -1,8 +1,8 @@
 # AI WP GEN
 
-**Version:** 1.6.8  
+**Version:** 1.6.10  
 **Author:** Stanislav Perepelytsia  
-**Stable tag:** 1.6.8  
+**Stable tag:** 1.6.10  
 **Tested up to:** 6.8  
 **License:** GPLv2 or later
 

@@ -196,23 +196,51 @@ CSS;
  * Generate main CSS styles from OpenAI
  */
 function aicg_generate_theme_css($api_key, $theme_name, $language, $custom_prompt = '') {
-    $prompt = "Generate comprehensive, modern CSS styles for a WordPress theme called \"{$theme_name}\" in {$language}. " .
-        ($custom_prompt ? "Based on this concept: {$custom_prompt}. " : "") .
-        "Include detailed, unique styles for: " .
-        "1) Header (navigation bar, logo area, responsive menu) - min 300 lines " .
-        "2) Footer (multi-column layout, links, social media) - min 200 lines " .
-        "3) Post/Article cards (featured image, title, excerpt, metadata) - min 200 lines " .
-        "4) Page layout (content area, sidebar, responsive grid) - min 200 lines " .
-        "5) Buttons and CTAs (hover effects, transitions, colors) - min 100 lines " .
-        "6) Forms (input styling, validation, focus states) - min 150 lines " .
-        "7) Mobile responsiveness (all screen sizes, touch-friendly) - min 150 lines " .
-        "8) Typography (headings h1-h6, paragraphs, links) - min 100 lines " .
-        "9) Colors and gradients (unique color scheme, smooth transitions) - min 150 lines " .
-        "10) Animations and effects (smooth transitions, hover states) - min 100 lines " .
-        "Total: 1400+ lines of professional, modern CSS. " .
-        "Include custom properties (CSS variables) for colors, spacing, fonts. " .
-        "Make it unique, visually appealing, and production-ready. " .
-        "Output: ONLY valid CSS code, no markdown or explanations.";
+    // Build a more specific prompt that emphasizes the custom concept
+    $concept_emphasis = '';
+    if (!empty($custom_prompt)) {
+        // Truncate if too long
+        $truncated_prompt = strlen($custom_prompt) > 300 ? substr($custom_prompt, 0, 300) . '...' : $custom_prompt;
+        $concept_emphasis = "THIS IS YOUR DESIGN DIRECTION - MAKE IT THE PRIMARY FOCUS:\n\"{$truncated_prompt}\"\n\n" .
+            "Apply this concept to ALL colors, typography, spacing, animations, and visual elements throughout the theme. " .
+            "The user provided this concept, so RESPECT IT and build the entire visual identity around it. ";
+    }
+    
+    $prompt = "Generate comprehensive, production-ready CSS styles for a WordPress theme called \"{$theme_name}\" in {$language}.\n\n" .
+        $concept_emphasis .
+        "Include detailed styles for ALL of these elements:\n\n" .
+        "GLOBAL:\n" .
+        "- Root CSS variables (colors from concept, spacing units, typography)\n" .
+        "- Body, html, main styling\n" .
+        "- All headings (h1-h6) with distinct sizing and styles\n" .
+        "- Paragraph, links, strong, em, blockquote styling\n\n" .
+        "LAYOUT & CONTAINERS:\n" .
+        "- .site-container, .content-wrapper, .page-container\n" .
+        "- Header with navigation, logo positioning\n" .
+        "- Footer with multi-section layout\n" .
+        "- Sidebar styling\n" .
+        "- Main content area with proper spacing\n\n" .
+        "CONTENT ELEMENTS:\n" .
+        "- Post/article cards with featured image, title, excerpt, metadata\n" .
+        "- Single post/page styling with breadcrumbs, author box\n" .
+        "- Archive/list styling with category labels\n" .
+        "- Page headers and sections\n\n" .
+        "INTERACTIVE:\n" .
+        "- Buttons with multiple states (normal, hover, active, disabled)\n" .
+        "- Forms: inputs, textareas, selects with focus states\n" .
+        "- Links with hover effects\n" .
+        "- Smooth transitions and transforms on interactive elements\n\n" .
+        "RESPONSIVE:\n" .
+        "- Mobile styles (480px and below)\n" .
+        "- Tablet styles (768px)\n" .
+        "- Desktop styles (1200px+)\n" .
+        "- Touch-friendly spacing for mobile\n\n" .
+        "SPECIAL EFFECTS:\n" .
+        "- Gradients and subtle animations\n" .
+        "- Hover effects on all interactive elements\n" .
+        "- Smooth color transitions matching the concept\n" .
+        "- Unique visual touches that match your design direction\n\n" .
+        "OUTPUT: Only valid, complete CSS code. No explanations or markdown. Minimum 1000 lines of well-organized CSS.";
 
     $response = aicg_openai_chat_request($api_key, $prompt);
     if (empty($response)) {
@@ -372,54 +400,108 @@ function aicg_generate_theme_index($api_key, $theme_name, $language) {
     return <<<'PHP'
 <?php
 /**
- * Main Template
+ * Main/Index Template
  */
 get_header();
 ?>
-<div class="posts-container">
-    <?php
-    if (have_posts()) :
-        while (have_posts()) : the_post();
-            ?>
-            <article class="post">
-                <?php if (has_post_thumbnail()) : ?>
-                    <div class="post-thumbnail">
-                        <?php the_post_thumbnail('medium'); ?>
+<main class="site-main">
+    <div class="posts-container">
+        <div class="posts-grid">
+            <?php
+            if (have_posts()) :
+                while (have_posts()) : the_post();
+                    ?>
+                    <article class="post-card" id="post-<?php the_ID(); ?>">
+                        <div class="post-card-inner">
+                            <?php if (has_post_thumbnail()) : ?>
+                                <a href="<?php the_permalink(); ?>" class="post-card-image">
+                                    <?php the_post_thumbnail('medium_large', ['class' => 'featured-image']); ?>
+                                    <span class="post-card-overlay"></span>
+                                </a>
+                            <?php endif; ?>
+
+                            <div class="post-card-content">
+                                <div class="post-categories">
+                                    <?php the_category(' '); ?>
+                                </div>
+
+                                <h2 class="post-card-title">
+                                    <a href="<?php the_permalink(); ?>">
+                                        <?php the_title(); ?>
+                                    </a>
+                                </h2>
+
+                                <div class="post-card-meta">
+                                    <span class="meta-author">
+                                        <i class="icon-user"></i>
+                                        <a href="<?php echo esc_url(get_author_posts_url(get_the_author_meta('ID'))); ?>">
+                                            <?php the_author(); ?>
+                                        </a>
+                                    </span>
+                                    <span class="meta-date">
+                                        <i class="icon-calendar"></i>
+                                        <time datetime="<?php echo get_the_date('c'); ?>">
+                                            <?php echo get_the_date(); ?>
+                                        </time>
+                                    </span>
+                                    <span class="meta-comments">
+                                        <i class="icon-comments"></i>
+                                        <a href="<?php comments_link(); ?>">
+                                            <?php comments_number(__('No comments', 'textdomain'), __('1 comment', 'textdomain'), __('% comments', 'textdomain')); ?>
+                                        </a>
+                                    </span>
+                                </div>
+
+                                <div class="post-card-excerpt">
+                                    <?php the_excerpt(); ?>
+                                </div>
+
+                                <a href="<?php the_permalink(); ?>" class="post-card-link">
+                                    <?php _e('Read More', 'textdomain'); ?> <span class="arrow">→</span>
+                                </a>
+                            </div>
+                        </div>
+                    </article>
+                    <?php
+                endwhile;
+                
+                // Pagination
+                ?>
+                <nav class="pagination-wrapper" aria-label="<?php _e('Post pagination', 'textdomain'); ?>">
+                    <div class="pagination">
+                        <?php
+                        echo paginate_links(array(
+                            'type' => 'list',
+                            'prev_text' => '← ' . __('Previous', 'textdomain'),
+                            'next_text' => __('Next', 'textdomain') . ' →',
+                            'before_page_number' => '<span class="page-number">',
+                            'after_page_number' => '</span>'
+                        ));
+                        ?>
                     </div>
-                <?php endif; ?>
-                <h2><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h2>
-                <div class="post-meta">
-                    <span class="author">By <?php the_author(); ?></span>
-                    <span class="date"><?php echo get_the_date(); ?></span>
-                    <span class="category"><?php the_category(', '); ?></span>
+                </nav>
+                <?php
+            else :
+                ?>
+                <div class="no-posts-found">
+                    <h2><?php _e('No Posts Found', 'textdomain'); ?></h2>
+                    <p><?php _e('Sorry, no posts matched your criteria.', 'textdomain'); ?></p>
                 </div>
-                <div class="excerpt">
-                    <?php the_excerpt(); ?>
-                </div>
-                <a href="<?php the_permalink(); ?>" class="read-more">Read More</a>
-            </article>
-            <?php
-        endwhile;
-        
-        // Pagination
-        ?>
-        <nav class="pagination">
-            <?php
-            echo paginate_links(array(
-                'type' => 'list',
-                'prev_text' => '&laquo; Previous',
-                'next_text' => 'Next &raquo;'
-            ));
+                <?php
+            endif;
             ?>
-        </nav>
+        </div>
+
         <?php
-    else :
+        // Display sidebar if it exists
+        if (is_active_sidebar('primary-sidebar')) {
+            echo '<aside class="posts-sidebar">';
+            dynamic_sidebar('primary-sidebar');
+            echo '</aside>';
+        }
         ?>
-        <p>No posts found.</p>
-        <?php
-    endif;
-    ?>
-</div>
+    </div>
+</main>
 <?php get_footer(); ?>
 PHP;
 }
@@ -438,40 +520,134 @@ function aicg_generate_theme_single($api_key, $theme_name, $language) {
  */
 get_header();
 ?>
-<div class="post-container">
-    <?php
-    while (have_posts()) : the_post();
-        ?>
-        <article class="single-post">
-            <?php if (has_post_thumbnail()) : ?>
-                <div class="post-featured-image">
-                    <?php the_post_thumbnail('large'); ?>
-                </div>
-            <?php endif; ?>
-            <h1><?php the_title(); ?></h1>
-            <div class="post-meta">
-                <span class="author">By <?php the_author_meta('display_name'); ?></span>
-                <span class="date"><?php echo get_the_date(); ?></span>
-                <span class="category"><?php the_category(', '); ?></span>
-            </div>
-            <div class="post-content">
-                <?php the_content(); ?>
-            </div>
-            <div class="post-tags">
-                <?php the_tags('<span>', '</span>', ''); ?>
-            </div>
-            <nav class="post-navigation">
-                <div class="prev-post"><?php previous_post_link(); ?></div>
-                <div class="next-post"><?php next_post_link(); ?></div>
-            </nav>
-        </article>
-        <?php
-        if (comments_open() || get_comments_number()) {
-            comments_template();
-        }
-    endwhile;
-    ?>
-</div>
+<main class="site-main">
+    <div class="post-container">
+        <div class="post-wrapper">
+            <?php
+            while (have_posts()) : the_post();
+                ?>
+                <article class="single-post" id="post-<?php the_ID(); ?>">
+                    <header class="post-header">
+                        <h1 class="post-title"><?php the_title(); ?></h1>
+                        
+                        <div class="post-meta-header">
+                            <div class="post-meta-author">
+                                <span class="meta-label"><?php _e('By', 'textdomain'); ?></span>
+                                <?php the_author_posts_link(); ?>
+                            </div>
+                            <div class="post-meta-date">
+                                <span class="meta-label"><?php _e('Published', 'textdomain'); ?></span>
+                                <time datetime="<?php echo get_the_date('c'); ?>">
+                                    <?php echo get_the_date(); ?>
+                                </time>
+                            </div>
+                            <div class="post-meta-categories">
+                                <span class="meta-label"><?php _e('Category', 'textdomain'); ?></span>
+                                <?php the_category(', '); ?>
+                            </div>
+                        </div>
+
+                        <?php if (has_post_thumbnail()) : ?>
+                            <div class="post-featured-image">
+                                <?php the_post_thumbnail('large', ['class' => 'featured-image']); ?>
+                            </div>
+                        <?php endif; ?>
+                    </header>
+
+                    <div class="post-content-wrapper">
+                        <div class="post-content">
+                            <?php the_content(); ?>
+                        </div>
+
+                        <?php
+                        // Display sidebar if it exists
+                        if (is_active_sidebar('primary-sidebar')) {
+                            echo '<aside class="post-sidebar">';
+                            dynamic_sidebar('primary-sidebar');
+                            echo '</aside>';
+                        }
+                        ?>
+                    </div>
+
+                    <?php
+                    $tags = get_the_tags();
+                    if ($tags) {
+                        echo '<footer class="post-footer">';
+                        echo '<div class="post-tags">';
+                        echo '<span class="tag-label">' . __('Tags:', 'textdomain') . '</span>';
+                        foreach ($tags as $tag) {
+                            echo '<a href="' . esc_url(get_tag_link($tag->term_id)) . '" class="tag">' . esc_html($tag->name) . '</a>';
+                        }
+                        echo '</div>';
+                        echo '</footer>';
+                    }
+                    ?>
+
+                    <nav class="post-navigation">
+                        <div class="nav-previous">
+                            <?php previous_post_link('%link', '← ' . __('Previous Post', 'textdomain')); ?>
+                        </div>
+                        <div class="nav-next">
+                            <?php next_post_link('%link', __('Next Post', 'textdomain') . ' →'); ?>
+                        </div>
+                    </nav>
+
+                    <!-- Author Box -->
+                    <div class="author-box">
+                        <div class="author-avatar">
+                            <?php echo get_avatar(get_the_author_meta('ID'), 80); ?>
+                        </div>
+                        <div class="author-info">
+                            <h4 class="author-name"><?php the_author_meta('display_name'); ?></h4>
+                            <p class="author-bio"><?php the_author_meta('description'); ?></p>
+                        </div>
+                    </div>
+                </article>
+
+                <section class="comments-section">
+                    <?php
+                    if (comments_open() || get_comments_number()) {
+                        comments_template();
+                    }
+                    ?>
+                </section>
+
+                <?php
+            endwhile;
+            ?>
+
+            <!-- Related Posts -->
+            <section class="related-posts">
+                <h3><?php _e('Related Posts', 'textdomain'); ?></h3>
+                <?php
+                $related_posts = new WP_Query([
+                    'category__in' => wp_get_post_categories(get_the_ID()),
+                    'posts_per_page' => 3,
+                    'post__not_in' => [get_the_ID()],
+                ]);
+
+                if ($related_posts->have_posts()) {
+                    echo '<div class="related-posts-grid">';
+                    while ($related_posts->have_posts()) {
+                        $related_posts->the_post();
+                        echo '<article class="related-post-card">';
+                        if (has_post_thumbnail()) {
+                            echo '<a href="' . esc_url(get_permalink()) . '" class="card-image">';
+                            the_post_thumbnail('medium');
+                            echo '</a>';
+                        }
+                        echo '<h4><a href="' . esc_url(get_permalink()) . '">' . get_the_title() . '</a></h4>';
+                        echo '<p class="excerpt">' . get_the_excerpt() . '</p>';
+                        echo '</article>';
+                    }
+                    echo '</div>';
+                }
+                wp_reset_postdata();
+                ?>
+            </section>
+        </div>
+    </div>
+</main>
 <?php get_footer(); ?>
 PHP;
 }
@@ -490,23 +666,75 @@ function aicg_generate_theme_page($api_key, $theme_name, $language) {
  */
 get_header();
 ?>
-<div class="page-container">
-    <?php
-    while (have_posts()) : the_post();
-        ?>
-        <article class="page">
-            <h1><?php the_title(); ?></h1>
-            <div class="page-content">
-                <?php the_content(); ?>
-            </div>
-        </article>
-        <?php
-        if (comments_open() || get_comments_number()) {
-            comments_template();
-        }
-    endwhile;
-    ?>
-</div>
+<main class="site-main">
+    <div class="page-container">
+        <div class="page-wrapper">
+            <?php
+            while (have_posts()) : the_post();
+                ?>
+                <article class="page-article" id="post-<?php the_ID(); ?>">
+                    <header class="page-header">
+                        <h1 class="page-title"><?php the_title(); ?></h1>
+                        <?php
+                        if (has_post_thumbnail()) {
+                            echo '<div class="page-featured-image">';
+                            the_post_thumbnail('large', ['class' => 'featured-image']);
+                            echo '</div>';
+                        }
+                        ?>
+                    </header>
+
+                    <div class="page-content-wrapper">
+                        <div class="page-content">
+                            <?php the_content(); ?>
+                        </div>
+                        
+                        <?php
+                        // Display sidebar if it exists
+                        if (is_active_sidebar('primary-sidebar')) {
+                            echo '<aside class="page-sidebar">';
+                            dynamic_sidebar('primary-sidebar');
+                            echo '</aside>';
+                        }
+                        ?>
+                    </div>
+
+                    <footer class="page-footer">
+                        <div class="page-meta">
+                            <span class="page-date">
+                                <i class="icon-calendar"></i>
+                                <?php echo get_the_date(); ?>
+                            </span>
+                            <span class="page-author">
+                                <i class="icon-user"></i>
+                                <?php the_author_posts_link(); ?>
+                            </span>
+                        </div>
+                    </footer>
+                </article>
+
+                <nav class="page-navigation">
+                    <div class="nav-previous">
+                        <?php previous_post_link('%link', '← ' . __('Previous Page', 'textdomain')); ?>
+                    </div>
+                    <div class="nav-next">
+                        <?php next_post_link('%link', __('Next Page', 'textdomain') . ' →'); ?>
+                    </div>
+                </nav>
+
+                <?php
+                if (comments_open() || get_comments_number()) {
+                    echo '<div class="page-comments-section">';
+                    comments_template();
+                    echo '</div>';
+                }
+                ?>
+                <?php
+            endwhile;
+            ?>
+        </div>
+    </div>
+</main>
 <?php get_footer(); ?>
 PHP;
 }
@@ -525,42 +753,111 @@ function aicg_generate_theme_archive($api_key, $theme_name, $language) {
  */
 get_header();
 ?>
-<div class="archive-container">
-    <h1 class="archive-title"><?php the_archive_title(); ?></h1>
-    <div class="archive-description"><?php the_archive_description(); ?></div>
-    
-    <div class="posts-archive">
-        <?php
-        if (have_posts()) :
-            while (have_posts()) : the_post();
-                ?>
-                <article class="post">
-                    <?php if (has_post_thumbnail()) : ?>
-                        <div class="post-thumbnail">
-                            <?php the_post_thumbnail('medium'); ?>
-                        </div>
-                    <?php endif; ?>
-                    <h2><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h2>
-                    <div class="post-meta">
-                        <span class="date"><?php echo get_the_date(); ?></span>
-                    </div>
-                    <div class="excerpt">
-                        <?php the_excerpt(); ?>
-                    </div>
-                </article>
+<main class="site-main">
+    <div class="archive-container">
+        <header class="archive-header">
+            <h1 class="archive-title"><?php the_archive_title(); ?></h1>
+            <div class="archive-description">
+                <?php the_archive_description(); ?>
+            </div>
+        </header>
+        
+        <div class="archive-posts-wrapper">
+            <div class="archive-posts">
                 <?php
-            endwhile;
-            
-            // Pagination
-            echo paginate_links(array('type' => 'list'));
-        else :
-            ?>
-            <p>No posts found.</p>
+                if (have_posts()) :
+                    while (have_posts()) : the_post();
+                        ?>
+                        <article class="post-card archive-post-card" id="post-<?php the_ID(); ?>">
+                            <div class="post-card-inner">
+                                <?php if (has_post_thumbnail()) : ?>
+                                    <a href="<?php the_permalink(); ?>" class="post-card-image">
+                                        <?php the_post_thumbnail('medium_large', ['class' => 'featured-image']); ?>
+                                        <span class="post-card-overlay"></span>
+                                    </a>
+                                <?php endif; ?>
+
+                                <div class="post-card-content">
+                                    <div class="post-categories">
+                                        <?php the_category(' '); ?>
+                                    </div>
+
+                                    <h2 class="post-card-title">
+                                        <a href="<?php the_permalink(); ?>">
+                                            <?php the_title(); ?>
+                                        </a>
+                                    </h2>
+
+                                    <div class="post-card-meta">
+                                        <span class="meta-date">
+                                            <i class="icon-calendar"></i>
+                                            <time datetime="<?php echo get_the_date('c'); ?>">
+                                                <?php echo get_the_date(); ?>
+                                            </time>
+                                        </span>
+                                        <span class="meta-author">
+                                            <i class="icon-user"></i>
+                                            <a href="<?php echo esc_url(get_author_posts_url(get_the_author_meta('ID'))); ?>">
+                                                <?php the_author(); ?>
+                                            </a>
+                                        </span>
+                                        <span class="meta-comments">
+                                            <i class="icon-comments"></i>
+                                            <a href="<?php comments_link(); ?>">
+                                                <?php comments_number(__('No comments', 'textdomain'), __('1 comment', 'textdomain'), __('% comments', 'textdomain')); ?>
+                                            </a>
+                                        </span>
+                                    </div>
+
+                                    <div class="post-card-excerpt">
+                                        <?php the_excerpt(); ?>
+                                    </div>
+
+                                    <a href="<?php the_permalink(); ?>" class="post-card-link">
+                                        <?php _e('Read More', 'textdomain'); ?> <span class="arrow">→</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </article>
+                        <?php
+                    endwhile;
+                    
+                    // Pagination
+                    ?>
+                    <nav class="pagination-wrapper" aria-label="<?php _e('Archive pagination', 'textdomain'); ?>">
+                        <div class="pagination">
+                            <?php
+                            echo paginate_links(array(
+                                'type' => 'list',
+                                'prev_text' => '← ' . __('Previous', 'textdomain'),
+                                'next_text' => __('Next', 'textdomain') . ' →'
+                            ));
+                            ?>
+                        </div>
+                    </nav>
+                    <?php
+                else :
+                    ?>
+                    <div class="no-posts-found">
+                        <h2><?php _e('No Posts Found', 'textdomain'); ?></h2>
+                        <p><?php _e('Sorry, no posts matched your criteria.', 'textdomain'); ?></p>
+                    </div>
+                    <?php
+                endif;
+                ?>
+            </div>
+
             <?php
-        endif;
-        ?>
+            // Display sidebar if it exists
+            if (is_active_sidebar('primary-sidebar')) {
+                echo '<aside class="archive-sidebar">';
+                dynamic_sidebar('primary-sidebar');
+                echo '</aside>';
+            }
+            ?>
+        </div>
     </div>
-</div>
+</main>
 <?php get_footer(); ?>
 PHP;
 }
