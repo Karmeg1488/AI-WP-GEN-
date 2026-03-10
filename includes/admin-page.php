@@ -23,10 +23,16 @@ function aicg_admin_page_render() {
         
         update_option('ang_site_topic', sanitize_textarea_field( wp_unslash($_POST['ang_site_topic'] ?? '') ));
         update_option('ang_style_prompt', sanitize_textarea_field( wp_unslash($_POST['ang_style_prompt'] ?? '') ));
-        update_option('aicg_theme_prompt', sanitize_textarea_field( wp_unslash($_POST['aicg_theme_prompt'] ?? '') ));
         update_option('ang_language', sanitize_text_field( wp_unslash($_POST['ang_language'] ?? 'en') ));
 
         echo '<div class="notice notice-success is-dismissible"><p>Settings saved.</p></div>';
+    }
+
+    // Handle logs clearing
+    if (isset($_POST['aicg_clear_logs'])) {
+        check_admin_referer('aicg_admin_nonce', 'aicg_admin_nonce_field');
+        delete_option('aicg_debug_logs');
+        echo '<div class="notice notice-success is-dismissible"><p>Logs cleared successfully.</p></div>';
     }
 
     // Handle authors and articles generation
@@ -58,6 +64,7 @@ function aicg_admin_page_render() {
         <h2 class="nav-tab-wrapper" id="aicg-tabs">
             <a href="#aicg-tab-settings" class="nav-tab nav-tab-active">Settings</a>
             <a href="#aicg-tab-generate" class="nav-tab">Generation</a>
+            <a href="#aicg-tab-logs" class="nav-tab">Logs</a>
         </h2>
         <div id="aicg-tab-settings" class="aicg-tab-content" style="display:block;">
             <div class="aicg-section" style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.05) 100%); border: 1px solid rgba(102, 126, 234, 0.2); margin-bottom: 28px;">
@@ -100,24 +107,24 @@ function aicg_admin_page_render() {
                         </tr>
                     
 <tr>
-    <th scope="row"><label for="ang_site_topic">Custom AI Prompt</label></th>
+    <th scope="row"><label for="ang_site_topic">Main Content & Design Prompt</label></th>
     <td>
-        <textarea name="ang_site_topic" id="ang_site_topic" class="large-text code" rows="6" style="width: 100%; max-width: 600px; font-family: 'Courier New', monospace;"><?php echo esc_textarea(get_option('ang_site_topic','')); ?></textarea>
-        <p class="description" style="margin-top: 8px;">Optional: Enter a custom prompt to guide AI content generation. Leave empty to use default prompts. Example: "Write technical articles about AI and machine learning"</p>
+        <textarea name="ang_site_topic" id="ang_site_topic" class="large-text code" rows="8" style="width: 100%; max-width: 600px; font-family: 'Courier New', monospace;"><?php echo esc_textarea(get_option('ang_site_topic','')); ?></textarea>
+        <p class="description" style="margin-top: 8px;">
+            <strong>Used for:</strong> Articles, blog pages, about/contact pages, logos, and overall design direction.<br>
+            <strong>Optional:</strong> Leave empty for default prompts.<br>
+            <strong>Examples:</strong><br>
+            • "Tech news and AI articles for professionals, modern minimalist design"<br>
+            • "Business consulting content with professional corporate theme"<br>
+            • "Lifestyle blog about fitness and wellness with vibrant colors"
+        </p>
     </td>
 </tr>
 <tr>
-    <th scope="row"><label for="ang_style_prompt">CSS Style Prompt</label></th>
+    <th scope="row"><label for="ang_style_prompt">CSS Style Prompt (Colors, Fonts, Layout)</label></th>
     <td>
         <textarea name="ang_style_prompt" id="ang_style_prompt" class="large-text code" rows="6" style="width: 100%; max-width: 600px; font-family: 'Courier New', monospace;"><?php echo esc_textarea(get_option('ang_style_prompt','')); ?></textarea>
-        <p class="description" style="margin-top: 8px;">Optional: Describe your website styling preferences - colors, tones, fonts, layout style, modern/classic, dark/light theme, etc. This will be used to generate a custom base.css file. Example: "Modern dark theme with purple and blue gradients, sans-serif fonts, minimalist design"</p>
-    </td>
-</tr>
-<tr>
-    <th scope="row"><label for="aicg_theme_prompt">Theme Design Prompt (v1.6)</label></th>
-    <td>
-        <textarea name="aicg_theme_prompt" id="aicg_theme_prompt" class="large-text code" rows="6" style="width: 100%; max-width: 600px; font-family: 'Courier New', monospace;"><?php echo esc_textarea(get_option('aicg_theme_prompt','')); ?></textarea>
-        <p class="description" style="margin-top: 8px;">Optional: Describe your desired WordPress theme design. This will be used to generate custom themes with unique styles. Example: "Professional business theme with minimalist design, dark blue and white colors, modern typography, clean layouts"</p>
+        <p class="description" style="margin-top: 8px;">Optional: Describe your CSS styling preferences - colors, gradients, fonts, spacing, dark/light theme. This generates the base.css file. Example: "Dark purple gradient theme with white sans-serif fonts, minimal spacing"</p>
     </td>
 </tr>
 <tr>
@@ -252,6 +259,31 @@ function aicg_admin_page_render() {
                     
                     <div id="aicg-generate-theme-result" style="margin-top: 15px;"></div>
                 </div>
+            </div>
+        </div>
+        <div id="aicg-tab-logs" class="aicg-tab-content" style="display:none;">
+            <h2>📋 Debug Logs</h2>
+            <p>Last 100 log entries from plugin operations:</p>
+            <div style="background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; padding: 15px; max-height: 500px; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 12px;">
+                <?php 
+                $logs = get_option('aicg_debug_logs', []);
+                if (empty($logs)) {
+                    echo '<p style="color: #999; margin: 0;">No logs yet. Run a generation to see logs here.</p>';
+                } else {
+                    foreach (array_reverse($logs) as $log) {
+                        echo '<div style="margin-bottom: 8px; padding: 8px; background: white; border-left: 3px solid #667eea;">';
+                        echo '<strong>[' . esc_html($log['time']) . ']</strong><br>';
+                        echo esc_html($log['message']) . '<br>';
+                        echo '</div>';
+                    }
+                }
+                ?>
+            </div>
+            <div style="margin-top: 15px;">
+                <form method="post" style="display: inline;">
+                    <?php wp_nonce_field('aicg_admin_nonce', 'aicg_admin_nonce_field'); ?>
+                    <button type="submit" name="aicg_clear_logs" class="button" style="background: #f44336; color: white; border: none;">Clear Logs</button>
+                </form>
             </div>
         </div>
     </div>

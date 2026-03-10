@@ -135,6 +135,8 @@ function aicg_generate_image_from_title($api_key, $title) {
  * Download image from URL and add it to the WordPress media library
  */
 function aicg_media_handle_sideload($image_url, $post_id = 0, $desc = '') {
+    aicg_debug_log('Downloading image from: ' . $image_url);
+    
     require_once(ABSPATH . 'wp-admin/includes/file.php');
     require_once(ABSPATH . 'wp-admin/includes/media.php');
     require_once(ABSPATH . 'wp-admin/includes/image.php');
@@ -142,23 +144,31 @@ function aicg_media_handle_sideload($image_url, $post_id = 0, $desc = '') {
     // Create a temporary file from URL
     $tmp = download_url($image_url);
     if (is_wp_error($tmp)) {
+        aicg_debug_log('Failed to download image: ' . $tmp->get_error_message());
         return false;
     }
+    
+    aicg_debug_log('Image downloaded to temporary file: ' . $tmp);
 
     // File name from URL
     $file_array = [];
     $url_parts = wp_parse_url($image_url);
-    $file_array['name'] = isset($url_parts['path']) ? basename($url_parts['path']) : '';
+    $file_array['name'] = isset($url_parts['path']) ? basename($url_parts['path']) : 'image.png';
     $file_array['tmp_name'] = $tmp;
+    
+    aicg_debug_log('File name: ' . $file_array['name']);
 
     // Add file to media library
     $attachment_id = media_handle_sideload($file_array, $post_id, $desc);
 
     // On error, delete temp file
     if (is_wp_error($attachment_id)) {
+        aicg_debug_log('Failed to add image to media library: ' . $attachment_id->get_error_message());
         wp_delete_file($tmp);
         return false;
     }
+    
+    aicg_debug_log('Image successfully added to media library with ID: ' . $attachment_id);
 
     return $attachment_id;
 }
