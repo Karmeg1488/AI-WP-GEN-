@@ -59,6 +59,65 @@ You can redistribute it and/or modify it under the terms of the GNU General Publ
 
 ## Changelog
 
+### 1.6.10 - Theme Template Enhancements
+* **ENHANCEMENT: Richer Page Templates** - All theme templates now include comprehensive semantic HTML and CSS classes for styling
+  * page.php now includes: featured images, metadata sections, navigation, sidebars, proper content wrapping
+  * single.php now includes: author box, related posts grid, detailed metadata, tags section, comments styling
+  * index.php now includes: post grid layout with cards, category badges, featured images with overlays, read-more buttons
+  * archive.php now includes: archive header, post cards grid, sidebar support, consistent styling with blog
+* **ENHANCEMENT: CSS Generation Prompt Improvements** - User's custom prompt now takes priority
+  * Custom design direction is emphasized as the primary focus for all CSS generation
+  * AI applies concept to ALL colors, typography, spacing, animations, and visual elements
+  * CSS includes proper variables (CSS variables) for colors from your design concept
+  * Increased minimum CSS output to 1000+ lines of production-ready styles
+* **ENHANCEMENT: Better Styling Hooks** - All templates provide extensive CSS classes for customization
+  * Full semantic class structure: .post-card, .post-featured-image, .post-meta, .post-content-wrapper, etc.
+  * Consistent naming across all templates for predictable styling
+  * Overlay effects on featured images, proper spacing classes, responsive grid support
+  * All elements now have proper styling targets instead of bare HTML
+* **BENEFIT**: Internal pages (posts, pages, archives) now receive the same visual care as homepage
+  * No more "unstyled internal pages" - all templates respect the theme's CSS design
+  * Sidebars are properly styled with CSS class targets
+  * Navigation between posts/pages is styled with arrows and hover effects
+
+### 1.6.8 - Image Generation Bug Fix
+* **BUGFIX: DALL-E Prompt Length** - Fixed "string too long" error in logo and image generation
+  * OpenAI DALL-E API has 1000 character limit for prompts
+  * Custom prompts are now truncated intelligently to 600 characters before combining with other text
+  * Added safety check in image generation to ensure prompts never exceed 1000 characters
+  * Logo generation now works reliably with long custom prompts
+* **ENHANCEMENT: Better Error Logging** - Image API errors are now logged with full details
+  * HTTP status codes logged (400, 401, 429, 500)
+  * API error messages and parameters logged for debugging
+  * Prompt length warnings logged when truncation occurs
+
+### 1.6.4 - Debug Logging & Prompt Consolidation
+* **CRITICAL: Comprehensive Debug Logging System** - Made accessible via WordPress admin
+  * Debug logs stored in WordPress options table (compatible with TasteWP and managed hosting)
+  * New "Logs" tab in AI WP GEN admin panel showing last 100 log entries
+  * Clear logs functionality for managing log size
+  * Logs display timestamp and message for easy debugging
+* **ENHANCEMENT: Unified Prompt System** - Consolidated multiple prompts into single field
+  * Merged "Custom AI Prompt" and "Theme Design Prompt (v1.6)" into single "Main Content & Design Prompt"
+  * Single prompt now drives: articles, pages, logos, theme generation, and design direction
+  * Reduces confusion and ensures consistency across all generation types
+  * Separate CSS-only prompt (ang_style_prompt) for advanced styling preferences
+* **ENHANCEMENT: Author Creation** - Fixed and improved author generation
+  * Fixed deprecated meta_key/meta_value syntax in get_users() - now uses meta_query
+  * Improved role assignment with WP_User::set_role() method
+  * Added author fallback mechanism: generated authors → existing author → admin
+  * Better author count logging for debugging
+* **BUGFIX: Content Validation** - Articles and pages now validate minimum content length
+  * Minimum 50 characters required for generated content
+  * Prevents empty or truncated content from being saved
+* **ENHANCEMENT: Token Management** - Increased max_tokens from 1500 to 2500
+  * Allows longer, more comprehensive articles and pages
+  * Better content generation for non-English languages
+* **ENHANCEMENT: Image Generation Retries** - Improved retry logic with rate-limiting
+  * 2 retry attempts for image generation with 5-second wait on rate limit (429 status)
+  * Better handling of temporary API failures
+  * Emoji-prefixed logging (🖼️ IMAGE API:) for easy log scanning
+
 ### 1.6.0 - MAJOR: Theme Generation
 * **🎭 NEW FEATURE: Complete WordPress Theme Generation** - Create full custom WordPress themes with unique styles
   * Generate complete WordPress theme structure with all necessary files
